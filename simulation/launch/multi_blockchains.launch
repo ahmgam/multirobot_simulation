@@ -1,0 +1,36 @@
+<launch>
+  <!--Arguments-->
+    <arg name="endpoint" default="localhost"/>
+    <arg name="username" default="admin"/>
+    <arg name="password" default="passw123"/>
+    <arg name="port" default="1883"/>
+    <arg name="base_dir" default="$(find multirobot_sim)/scripts"/>
+    <arg name="secret" default="abc123"/>
+    <arg name="schema" default="$(arg base_dir)/schema.sql"/>
+  <!-- Load the world -->
+
+  <!-- Spawn robot 1-->
+  <include file="$(find multirobot_sim)/launch/blockchain.launch">
+    <arg name="node_id" value="node1"/>
+    <arg name="node_type" value="uav"/>
+    <arg name="endpoint" value="$(arg endpoint)"/>
+    <arg name="username" value="$(arg username)"/>
+    <arg name="password" value="$(arg password)"/>
+    <arg name="port" value="$(arg port)"/>
+    <arg name="secret" value="$(arg secret)"/>
+    <arg name="base_directory" value="$(arg base_dir)"/>
+    <arg name="schema" value="$(arg schema)"/>
+  </include>
+  <!-- Spawn robot 2-->
+  <include file="$(find multirobot_sim)/launch/blockchain.launch">
+    <arg name="node_id" value="node2"/>
+    <arg name="node_type" value="ugv"/>
+    <arg name="endpoint" value="$(arg endpoint)"/>
+    <arg name="username" value="$(arg username)"/>
+    <arg name="password" value="$(arg password)"/>
+    <arg name="port" value="$(arg port)"/>
+    <arg name="secret" value="$(arg secret)"/>
+    <arg name="base_directory" value="$(arg base_dir)"/>
+    <arg name="schema" value="$(arg schema)"/>
+  </include>
+</launch>
