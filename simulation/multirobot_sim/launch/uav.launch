@@ -1,0 +1,37 @@
+<launch>
+    <!--arg name="mav_name" default="hummingbird"/-->
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="0"/>
+    <arg name="node_id"/>
+
+
+    <!-- env variables-->
+    <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
+    <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
+    <!-- Robot namespace-->
+    <group ns="$(arg node_id)">
+        <!--Spawn the robot-->
+        <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
+            <arg name="mav_name" value="firefly" />
+            <arg name="model" value="$(find rotors_description)/urdf/mav_generic_odometry_sensor.gazebo" />
+            <arg name="enable_logging" value="false" />
+            <arg name="enable_ground_truth" value="true" />
+            <arg name="log_file" value="firefly"/>
+            <arg name="namespace" value="$(arg node_id)"/>
+            <arg name="x" value="$(arg x)"/>
+            <arg name="y" value="$(arg y)"/>
+            <arg name="z" value="0.0"/>
+        </include>
+        
+        <!-- Start flying -->
+        <node name="hovering_example" pkg="rotors_gazebo" type="hovering_example" output="screen">
+            <param name="x" value="$(arg x)"/>
+            <param name="y" value="$(arg y)"/>
+            <param name="z" value="$(arg z)"/>
+        </node>
+        <!-- robot state publisher-->
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+        <!-- joint state publisher-->
+        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+    </group>

@@ -1,0 +1,49 @@
+version: '3'
+
+
+services:
+
+  rosmaster:
+    container_name: rosmaster
+    image: ahmgam/simulation_setup:main
+    networks:
+      - ros-network
+    environment:
+      - WORLD_FILE=/root/robot_ws/src/multirobot_sim/worlds/testworld.world
+      - MAP_FILE=/root/robot_ws/src/multirobot_sim/maps/map.yaml
+      - ROS_MASTER_URI=http://rosmaster:11311
+    restart: always
+    ports:
+      - "80:8080"
+
+
+  agent1:
+    image: ahmgam/robotagent:main
+    environment:
+      - ROS_MASTER_URI=http://rosmaster:11311
+      - GAZEBO_MASTER_URI=http://rosmaster:11345
+      - ROBOT_TYPE=uav
+      - ROBOT_NAME=uav1
+      - X=0.0
+      - Y=0.0
+    networks:
+      - ros-network
+    depends_on:
+      - rosmaster
+
+  agent2:
+    image: ahmgam/robotagent:main
+    environment:
+      - ROS_MASTER_URI=http://rosmaster:11311
+      - GAZEBO_MASTER_URI=http://rosmaster:11345
+      - ROBOT_TYPE=ugv
+      - ROBOT_NAME=ugv1
+      - X=1.0
+      - Y=0.0
+    networks:
+      - ros-network
+    depends_on:
+      - rosmaster
+
+networks:
+  ros-network:

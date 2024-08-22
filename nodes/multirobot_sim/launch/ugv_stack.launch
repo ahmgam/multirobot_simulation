@@ -1,0 +1,24 @@
+<launch>
+    <arg name="model" default="waffle" doc="model type [burger, waffle, waffle_pi]"/>
+    <arg name="node_id"/>
+    <arg name="node_type" default="ugv"/>
+    <!--Load the naviagtor-->
+    <node name="navigator" pkg="multirobot_sim" type="navigator.py" output="screen">
+        <param name="node_id" value="$(arg node_id)"/>
+        <param name="odom_topic" value="/$(arg node_id)/odom"/>
+        <param name="goal_topic" value="goal"/>
+        <param name="path_topic" value="path"/>
+    </node>
+    <!-- Task allocation-->
+    <node name="task_allocation" pkg="multirobot_sim" type="task_allocation.py" output="screen">
+        <param name="node_id" value="$(arg node_id)"/>
+        <param name="node_type" value="$(arg node_type)"/>
+        <param name="odom_topic" value="/$(arg node_id)/odom"/>
+    </node>
+    <!-- Load the controller -->
+    <node pkg="multirobot_sim" type="simple_controller.py" name="simple_controller" output="screen" required="true">
+        <param name="odom_topic" value="/$(arg node_id)/odom"/>
+        <param name="cmd_topic" value="/$(arg node_id)/cmd_vel"/>
+        <param name="goal_topic" value="/$(arg node_id)/goal"/>
+    </node>  
+</launch>
