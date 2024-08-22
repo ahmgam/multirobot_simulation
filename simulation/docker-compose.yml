@@ -3,6 +3,18 @@ version: '3'
 
 services:
 
+  mosquittoo:
+    image: eclipse-mosquitto
+    container_name: mosquittoo
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/data:/etc/mosquitto
+      - ./mosquitto/config:/mosquitto/config
+    networks:
+      - ros-network
+
   rosmaster:
     container_name: rosmaster
     image: ahmgam/simulation_setup:main
@@ -11,39 +23,14 @@ services:
     environment:
       - WORLD_FILE=/root/robot_ws/src/multirobot_sim/worlds/testworld.world
       - MAP_FILE=/root/robot_ws/src/multirobot_sim/maps/map.yaml
+      - LAUNCH_FILE=/root/robot_ws/src/multirobot_sim/launch/multirobot.launch
       - ROS_MASTER_URI=http://rosmaster:11311
     restart: always
     ports:
       - "80:8080"
+      - "11311:11311"
+      - "11345:11345"
 
-
-  agent1:
-    image: ahmgam/robotagent:main
-    environment:
-      - ROS_MASTER_URI=http://rosmaster:11311
-      - GAZEBO_MASTER_URI=http://rosmaster:11345
-      - ROBOT_TYPE=uav
-      - ROBOT_NAME=uav1
-      - X=0.0
-      - Y=0.0
-    networks:
-      - ros-network
-    depends_on:
-      - rosmaster
-
-  agent2:
-    image: ahmgam/robotagent:main
-    environment:
-      - ROS_MASTER_URI=http://rosmaster:11311
-      - GAZEBO_MASTER_URI=http://rosmaster:11345
-      - ROBOT_TYPE=ugv
-      - ROBOT_NAME=ugv1
-      - X=1.0
-      - Y=0.0
-    networks:
-      - ros-network
-    depends_on:
-      - rosmaster
 
 networks:
   ros-network:

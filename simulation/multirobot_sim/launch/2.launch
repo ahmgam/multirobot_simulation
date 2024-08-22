@@ -5,7 +5,7 @@
         <arg name="x" value="0"/>
         <arg name="y" value="0"/>
         <arg name="z" value="0"/>
-        <arg name="node_id" value="uav1"/>
+        <arg name="node_id" value="uav-1"/>
     </include>
 
 <!-- include ugv -->
@@ -13,7 +13,7 @@
         <arg name="x" value="0.0"/>
         <arg name="y" value="0.0"/>
         <arg name="z" value="0.0"/>
-        <arg name="node_id" value="ugv1"/>
+        <arg name="node_id" value="ugv-1"/>
     </include>
     
 

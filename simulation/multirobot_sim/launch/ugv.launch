@@ -3,9 +3,7 @@
   <arg name="x" default="0.0"/>
   <arg name="y" default="0.0"/>
   <arg name="z" default="0.0"/>
-
   <arg name="node_id"/>
-
   <!--Robot namespace-->
   <group ns="$(arg node_id)">
     <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_waffle.urdf.xacro" />

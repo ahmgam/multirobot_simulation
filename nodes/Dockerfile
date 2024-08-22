@@ -6,13 +6,13 @@ RUN mkdir -p robot_ws/devel
 
 WORKDIR /robot_ws
 
-COPY ./src/multirobot_sim/scripts/roschain/requirements.txt ./requirements.txt
+COPY ./multirobot_sim/scripts/roschain/requirements.txt ./requirements.txt
 
 RUN apt-get update && apt-get install -y python3-pip python-is-python3
 
 RUN pip3 install -r requirements.txt
 
-COPY ./src ./src
+COPY ./multirobot_sim ./src
 
 RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; cd robot_ws; catkin_make'
   

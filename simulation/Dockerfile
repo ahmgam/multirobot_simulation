@@ -126,7 +126,7 @@ RUN git clone  https://github.com/ethz-asl/mav_comm.git /root/robot_ws/src/mav_c
 
 RUN git clone  https://github.com/OctoMap/octomap_ros.git /root/robot_ws/src/octomap_ros
 
-RUN git clone https://github.com/ahmgam/multirobot_sim.git /root/robot_ws/src/multirobot_sim
+COPY ./multirobot_sim /root/robot_ws/src/multirobot_sim
 
 RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; cd /root/robot_ws; catkin_make'
 
@@ -136,6 +136,7 @@ EXPOSE 8080
 EXPOSE 7681
 EXPOSE 11234
 EXPOSE 11311
+EXPOSE 11345
 
 COPY ./entrypoint.sh /
 
