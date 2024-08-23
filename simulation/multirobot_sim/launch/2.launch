@@ -5,15 +5,15 @@
         <arg name="x" value="0"/>
         <arg name="y" value="0"/>
         <arg name="z" value="0"/>
-        <arg name="node_id" value="uav-1"/>
+        <arg name="node_id" value="uav01"/>
     </include>
 
 <!-- include ugv -->
     <include file="$(find multirobot_sim)/launch/ugv.launch">
-        <arg name="x" value="0.0"/>
+        <arg name="x" value="1.0"/>
         <arg name="y" value="0.0"/>
         <arg name="z" value="0.0"/>
-        <arg name="node_id" value="ugv-1"/>
+        <arg name="node_id" value="ugv01"/>
     </include>
     
 

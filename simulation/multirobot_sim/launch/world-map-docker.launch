@@ -19,6 +19,6 @@
   <!-- Map server -->
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
   <!-- Include Launch file-->
-  <include file="$(find multirobot_sim)/launch/$(arg launch_file)"/>
+  <include file="$(find multirobot_sim)/launch/$(arg launch_file).launch"/>
 
 </launch>

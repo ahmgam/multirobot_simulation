@@ -17,13 +17,13 @@ services:
 
   rosmaster:
     container_name: rosmaster
-    image: ahmgam/simulation_setup:main
+    image: simulation_setup:latest
     networks:
       - ros-network
     environment:
       - WORLD_FILE=/root/robot_ws/src/multirobot_sim/worlds/testworld.world
       - MAP_FILE=/root/robot_ws/src/multirobot_sim/maps/map.yaml
-      - LAUNCH_FILE=/root/robot_ws/src/multirobot_sim/launch/multirobot.launch
+      - LAUNCH_FILE=2
       - ROS_MASTER_URI=http://rosmaster:11311
     restart: always
     ports:

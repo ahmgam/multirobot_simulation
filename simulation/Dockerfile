@@ -125,7 +125,15 @@ COPY ./multirobot_sim /root/robot_ws/src/multirobot_sim
 
 RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; cd /root/robot_ws; catkin_make'
 
-RUN cp -R /usr/share/gazebo-11/media /root/gzweb/http/client/assets/
+#RUN cp -R /usr/share/gazebo-11/media /root/gzweb/http/client/assets/
+
+#RUN cp -R /root/robot_ws/src/turtlebot3/turtlebot3_description /root/gzweb/http/client/assets/turtlebot3_description
+
+#RUN cp -R /root/robot_ws/src/rotor_simulations/rotors_description /root/gzweb/http/client/assets/rotors_description
+
+#RUN cp -R /root/robot_ws/src/rotor_simulations/rotors_gazebo/models/* /root/gzweb/http/client/assets/
+
+
 
 EXPOSE 8080
 EXPOSE 7681
