@@ -8,7 +8,7 @@ WORKDIR /robot_ws
 
 COPY ./multirobot_sim/scripts/roschain/requirements.txt ./requirements.txt
 
-RUN apt-get update && apt-get install -y python3-pip python-is-python3 ros-noetic-tf2-geometry-msgs ros-noetic-tf
+RUN apt-get update && apt-get install -y python3-pip python-is-python3 ros-noetic-tf2-geometry-msgs ros-noetic-tf ros-noetic-gazebo-msgs
 
 RUN pip3 install -r requirements.txt
 
