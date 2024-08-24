@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   geometry_msgs
+  gazebo_msgs
+  nav_msgs
   actionlib
   actionlib_msgs
   std_srvs
@@ -86,6 +88,8 @@ generate_messages(
    geometry_msgs
    actionlib_msgs
    std_srvs
+   gazebo_msgs
+   nav_msgs
    #diagnostic_msgs
  )
 
