@@ -80,4 +80,5 @@
                 <arg name="node_type" value="$(arg node_type)"/>
             </include>
         </group>
+    </group>
 </launch>
