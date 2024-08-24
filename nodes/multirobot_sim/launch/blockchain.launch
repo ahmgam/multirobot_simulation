@@ -65,7 +65,7 @@
             <param name="schema" value="$(arg schema)"/>
         </node>  
         <!-- if node_type = uav : define uav controllers-->
-        <group if="$(arg node_type) == 'uav'">
+        <group if="$(eval node_type == 'uav')">
             <!-- include uav stack-->
             <include file="$(find multirobot_sim)/launch/uav_stack.launch">
                 <arg name="node_id" value="$(arg node_id)"/>
@@ -73,7 +73,7 @@
             </include>
         </group>
         <!-- if node_type = ugv : define ugv controllers-->
-        <group if="$(arg node_type) == 'ugv'">
+        <group if="$(eval node_type == 'ugv')">
             <!-- include ugv stack-->
             <include file="$(find multirobot_sim)/launch/ugv_stack.launch">
                 <arg name="node_id" value="$(arg node_id)"/>
