@@ -16,6 +16,7 @@ services:
       - MIN_NODES_NUM=1
       - ROS_MASTER_URI=http://${SIMULATION_HOST}:11311
       - GAZEBO_MASTER_URI=http://${SIMULATION_HOST}:11345
+      - TIMEOUT_INTERVAL=60
     volumes:
       - ./robots/${ROBOT_NAME}:/robot_ws/src/multirobot_sim/files
  
