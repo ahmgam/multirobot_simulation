@@ -16,7 +16,7 @@ services:
       - GAZEBO_MASTER_URI=http://rosmaster:11345
       - TIMEOUT_INTERVAL=60
     volumes:
-      - ./data:/robot_ws/src/multirobot_sim/files
+      - ~/data:/robot_ws/src/multirobot_sim/files
     deploy:
       restart_policy:
         condition: none
@@ -39,7 +39,7 @@ services:
       - GAZEBO_MASTER_URI=http://rosmaster:11345
       - TIMEOUT_INTERVAL=60
     volumes:
-      - ./data:/robot_ws/src/multirobot_sim/files
+      - ~/data:/robot_ws/src/multirobot_sim/files
     deploy:
       restart_policy:
         condition: none
