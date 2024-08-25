@@ -54,8 +54,8 @@ services:
     ports:
       - "1883:1883"
     volumes:
-      - ./mosquitto/data:/etc/mosquitto
-      - ./mosquitto/config:/mosquitto/config
+      - ~/mosquitto/data:/etc/mosquitto
+      - ~/mosquitto/config:/mosquitto/config
     networks:
       - robot01
       - robot02
