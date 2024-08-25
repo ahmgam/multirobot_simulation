@@ -44,20 +44,6 @@ RUN apt-get update && apt-get install -q -y --no-install-recommends \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
 
-# clone gzweb
-ENV GZWEB_WS /root/gzweb
-RUN git clone https://github.com/osrf/gzweb.git $GZWEB_WS
-WORKDIR $GZWEB_WS
-
-# build gzweb
-RUN git checkout gzweb_1.4
-
-RUN npm run deploy --- -m
-
-
-#install ros
-
-
 # setup sources.list
 RUN echo "deb http://packages.ros.org/ros/ubuntu focal main" > /etc/apt/sources.list.d/ros1-latest.list
 
@@ -72,7 +58,7 @@ ENV ROS_DISTRO noetic
 
 # install ros packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-noetic-ros-core=1.5.0-1* \
+    ros-noetic-desktop-full=1.5.0-1* \
     && rm -rf /var/lib/apt/lists/*
 
 # install bootstrap tools
@@ -87,12 +73,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 RUN rosdep init && \
   rosdep update --rosdistro $ROS_DISTRO
 
-
-# install ros packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-noetic-desktop-full=1.5.0-1* \
-    && rm -rf /var/lib/apt/lists/*
-
 # install packages dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-dynamixel-sdk \
@@ -100,6 +80,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgoogle-glog-dev \
     protobuf-compiler libprotobuf-dev \
     ros-noetic-map-server \
+    ros-noetic--rosbridge-server \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -124,16 +105,6 @@ RUN git clone  https://github.com/OctoMap/octomap_ros.git /root/robot_ws/src/oct
 COPY ./multirobot_sim /root/robot_ws/src/multirobot_sim
 
 RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; cd /root/robot_ws; catkin_make'
-
-#RUN cp -R /usr/share/gazebo-11/media /root/gzweb/http/client/assets/
-
-#RUN cp -R /root/robot_ws/src/turtlebot3/turtlebot3_description /root/gzweb/http/client/assets/turtlebot3_description
-
-#RUN cp -R /root/robot_ws/src/rotor_simulations/rotors_description /root/gzweb/http/client/assets/rotors_description
-
-#RUN cp -R /root/robot_ws/src/rotor_simulations/rotors_gazebo/models/* /root/gzweb/http/client/assets/
-
-
 
 EXPOSE 8080
 EXPOSE 7681
