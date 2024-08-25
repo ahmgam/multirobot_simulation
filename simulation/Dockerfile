@@ -80,7 +80,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgoogle-glog-dev \
     protobuf-compiler libprotobuf-dev \
     ros-noetic-map-server \
-    ros-noetic--rosbridge-server \
+    ros-noetic-rosbridge-server \
     && rm -rf /var/lib/apt/lists/*
 
 
