@@ -15,8 +15,8 @@ services:
       - ROS_MASTER_URI=http://rosmaster:11311
       - GAZEBO_MASTER_URI=http://rosmaster:11345
       - TIMEOUT_INTERVAL=60
-    volumes:
-      - ~/data:/robot_ws/src/multirobot_sim/files
+#    volumes:
+#      - ~/data:/robot_ws/src/multirobot_sim/files
     deploy:
       restart_policy:
         condition: none
@@ -38,8 +38,8 @@ services:
       - ROS_MASTER_URI=http://rosmaster:11311
       - GAZEBO_MASTER_URI=http://rosmaster:11345
       - TIMEOUT_INTERVAL=60
-    volumes:
-      - ~/data:/robot_ws/src/multirobot_sim/files
+#    volumes:
+#      - ~/data:/robot_ws/src/multirobot_sim/files
     deploy:
       restart_policy:
         condition: none
@@ -79,7 +79,7 @@ services:
       - ROS_MASTER_URI=http://rosmaster:11311
     restart: always
     ports:
-      - "80:8080"
+      - "8080:8080"
       - "11311:11311"
       - "11345:11345"
     deploy:
