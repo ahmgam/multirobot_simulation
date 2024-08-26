@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 from math import ceil
-import rospy
-from nav_msgs.srv import GetMap
-from gazebo_msgs.srv import GetModelState
-from tf.transformations import euler_from_quaternion
+import math
 import numpy as np
 import pygame
 from cv2 import resize,imread
-from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Path
-from multirobot_sim.srv import AddGoal,AddGoalRequest
-from multirobot_sim.srv import SubmitTransaction,SubmitTransactionRequest
 import json
 from datetime import datetime
+from roslibpy import Topic, Service, Ros,ServiceRequest,Message
+from time  import sleep
+from os import environ
 # define the default robots sizes in meters
 ROBOT_SIZE_UAV = 0.5
 ROBOT_SIZE_UGV = 0.5
@@ -29,31 +25,70 @@ UAV_GOAL_TOPIC = "/goal"
 #UAV_GOAL_TOPIC = "/command/pose"
 UGV_PATH_TOPIC = "path"
 UAV_PATH_TOPIC = "path"
-
 NEEDED_UAVS = 1
 NEEDED_UGVS = 1
 
+def euler_from_quaternion(x,y,z,w):
+  # Calculate roll (rotation around X-axis)
+  t0 = +2.0 * (w * x + y * z)
+  t1 = +1.0 - 2.0 * (x * x + y * y)
+  roll = math.atan2(t0, t1)
+  
+  # Calculate pitch (rotation around Y-axis)
+  t2 = +2.0 * (w * y - z * x)
+  t2 = +1.0 if t2 > +1.0 else t2
+  t2 = -1.0 if t2 < -1.0 else t2
+  pitch = math.asin(t2)
+  
+  # Calculate yaw (rotation around Z-axis)
+  t3 = +2.0 * (w * z + x * y)
+  t4 = +1.0 - 2.0 * (y * y + z * z)
+  yaw = math.atan2(t3, t4)
+  
+  return roll, pitch, yaw
+  
+class Rate:
+  def __init__(self,rate):
+    self.rate = rate
+  def sleep(self):
+    sleep(1/self.rate)
 class PyMonitor:
   def __init__(self):
     #get parameters
-    self.robots,self.map,self.size = self.getParameters()
+    self.robots,self.map,self.size,self.host,self.port,self.needed_uav, self.needed_ugv = self.getParameters()
     #initialize node
-    rospy.loginfo("PyMonitor: Initializing node")
-    rospy.init_node('pymonitor', anonymous=True)
+    print("PyMonitor: Initializing node")
+    self.node  = Ros(self.host, self.port)
+    self.map_service = Service(self.node, '/static_map', 'nav_msgs/GetMap')
+    self.model_coordinates = Service(self.node, '/gazebo/get_model_state', 'gazebo_msgs/GetModelState')
     #parse robots
-    rospy.loginfo("PyMonitor: Parsing robots")
+    print("PyMonitor: Parsing robots")
     self.robots=self.parseRobots(self.robots)
     #get map message from map topic
-    rospy.loginfo("PyMonitor: getting map")
+    print("PyMonitor: getting map")
+    self.node.run()
     self.map_msg = self.getTheMap()
     #get map metadata
-    map_meta = self.map_msg.info
+    map_meta = self.map_msg["info"]
     #get scales
-    xScale = self.size[0]/map_meta.width
-    yScale = self.size[1]/map_meta.height
+    xScale = self.size[0]/map_meta["width"]
+    yScale = self.size[1]/map_meta["height"]
     self.scale=(xScale,yScale)
+    #initialize turtles
+    print("PyMonitor: Initializing Robots ")
+    self.surfaces = self.initializeSurfaces(self.robots,self.scale,map_meta["resolution"])
+    #subscribe to robot path topic
+    for surface in self.surfaces:
+        if surface['type'] == 'uav':
+          surface['listener']=Topic(self.node,f"{surface['name']}/{UAV_PATH_TOPIC}", 'nav_msgs/Path')
+          surface['listener'].subscribe(lambda msg:self.pathCallback(msg,[self,surface]))
+        elif surface['type'] == 'ugv':
+          surface['listener']=Topic(self.node,f"{surface['name']}/{UGV_PATH_TOPIC}", 'nav_msgs/Path')
+          surface['listener'].subscribe(lambda msg:self.pathCallback(msg,[self,surface]))
+        else:
+            raise ValueError("Invalid robot type")
     #display map
-    rospy.loginfo("PyMonitor: Displaying map")
+    print("PyMonitor: Displaying map")
     self.bg,self.screen = self.displayMap(self.map_msg,self.scale)
     #define cursor
     self.cursor = pygame.Surface((30,30))
@@ -61,24 +96,13 @@ class PyMonitor:
     self.cursor.fill((0,255,0))
     #change cursor transparency
     self.cursor.set_alpha(50)
-    #initialize turtles
-    rospy.loginfo("PyMonitor: Initializing Robots ")
-    self.surfaces = self.initializeSurfaces(self.robots,self.scale,map_meta.resolution)
-    #subscribe to robot path topic
-    for surface in self.surfaces:
-        if surface['type'] == 'uav':
-            rospy.Subscriber(f"{surface['name']}/{UAV_PATH_TOPIC}", Path, self.pathCallback,(self,surface))
-        elif surface['type'] == 'ugv':
-            rospy.Subscriber(f"{surface['name']}/{UGV_PATH_TOPIC}", Path, self.pathCallback,(self,surface))
-        else:
-            raise ValueError("Invalid robot type")
-    rospy.loginfo("PyMonitor: Robots initialized")
+    print("PyMonitor: Robots initialized")
     #subscribe to robot position topic
-    rospy.loginfo("PyMonitor: Subscribing to robot position topic")
-    self.model_coordinates = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
-    self.rate = rospy.Rate(10) # 10hz
+    print("PyMonitor: Subscribing to robot position topic")
+    
+    self.rate = Rate(10) # 10hz
     # spin() simply keeps python from exiting until this node is stopped
-    rospy.loginfo("PyMonitor: Spinning")
+    print("PyMonitor: Spinning")
     self.activeIndex = None
 
   @staticmethod
@@ -88,36 +112,34 @@ class PyMonitor:
     #get surface index
     index = self.surfaces.index(surface)
     #get path
-    path = msg.poses
+    path = msg["poses"]
     #get path points
-    points = [pose.pose.position for pose in path]
+    points = [pose["pose"]["position"] for pose in path]
     #update surface path
-    self.surfaces[index]['path'] = points
+    self.surfaces[index]["path"] = points
   
   def getParameters(self):
     #getting arguments
-    try :
-      robots = rospy.get_param('/pymonitor/robots') # node_name/argsname
-      print("Getting robot argument, and got : ", robots)
-
-    except rospy.ROSInterruptException:
-      raise rospy.ROSInterruptException("Invalid arguments : Robots")
-    try :
-  
-
-      map = rospy.get_param('/pymonitor/map')
-      print("Getting map topic argument, and got : ", map)
-
-    except rospy.ROSInterruptException:
-      raise rospy.ROSInterruptException("Invalid arguments : Map")
-
-    try :
-      size = rospy.get_param('/pymonitor/size') # node_name/argsname
-      print("Getting size argument, and got : ", size)
-      size = self.parseStringTuple(size)
-    except:
-      size = (800, 600)
-    return robots,map,size
+    robots = get_param('ROBOTS') # node_name/argsname
+    print("Getting robot argument, and got : ", robots)
+    map = get_param('MAP')
+    print("Getting map topic argument, and got : ", map)
+    size = get_param('SIZE','(800,600)') # node_name/argsname
+    print("Getting size argument, and got : ", size)
+    host = get_param('ROS_HOST','localhost')
+    print("Getting ROS_HOST argument, and got : ", host)
+    port = get_param('ROS_PORT',9090)
+    port = int(port)
+    print("Getting ROS_PORT argument, and got : ", port)
+    size = self.parseStringTuple(size)
+    print("Parsed size : ", size)
+    needed_uavs = get_param('NEEDED_UAVS',1)
+    needed_ugvs = get_param('NEEDED_UGVS',1)
+    needed_uavs = int(needed_uavs)
+    needed_ugvs = int(needed_ugvs)
+    print("Getting NEEDED_UAVS argument, and got : ", needed_uavs)
+    print("Getting NEEDED_UGVS argument, and got : ", needed_ugvs)
+    return robots,map,size,host,port,needed_uavs,needed_ugvs
   
   def parseStringTuple(self,string):
     if string.startswith('(') and string.endswith(')') and string.find(',') != -1:
@@ -179,7 +201,7 @@ class PyMonitor:
     return robots
 
   def getTheMap(self,mapService='/static_map'):
-    return rospy.ServiceProxy(mapService, GetMap)().map
+    return self.map_service.call(ServiceRequest())["map"]
   
   def insideRect(self,point,pos,sprite):
     pointTransformed = (point[0]-pos[0],point[1]-pos[1])
@@ -187,13 +209,13 @@ class PyMonitor:
 
   def displayMap(self,map_msg,scale):
     #get map metadata
-    map_meta = map_msg.info
+    map_meta = map_msg["info"]
     #get map data
-    map_data = map_msg.data
+    map_data = map_msg["data"]
     #get map width
-    map_width = map_meta.width
+    map_width = map_meta["width"]
     #get map height
-    map_height = map_meta.height
+    map_height = map_meta["height"]
     print(f"map width : {map_width} , map height : {map_height}")
     scaledSize = (ceil(map_height*scale[0]), ceil(map_width*scale[1]))
     map_matrix = np.array(map_data).reshape(map_height,map_width,1)*2.55
@@ -207,15 +229,6 @@ class PyMonitor:
     DISPLAYSURF = pygame.display.set_mode(scaledSize)
     return surf,DISPLAYSURF
 
-  def createGoal(self,x,y,z,reference_frame="map"):
-    goal = PoseStamped()
-    goal.header.frame_id = reference_frame
-    goal.header.stamp = rospy.Time.now()
-    goal.pose.position.x = x
-    goal.pose.position.y = y
-    goal.pose.position.z = z
-    goal.pose.orientation.w = 1
-    return goal
 
   def initializeSurfaces(self,robots,scale,resolution):
     #initialize turtles
@@ -241,64 +254,41 @@ class PyMonitor:
 
   def updateRobotCoordinates(self,robot):
     pass
-    resp_coordinates = self.model_coordinates(robot["model_name"], "world")
-    (roll, pitch, yaw) =euler_from_quaternion((
-      resp_coordinates.pose.orientation.x,
-      resp_coordinates.pose.orientation.y,
-      resp_coordinates.pose.orientation.z,
-      resp_coordinates.pose.orientation.w
-      ))
-    x=resp_coordinates.pose.position.x
-    y=resp_coordinates.pose.position.y
-    z=resp_coordinates.pose.position.z
-    return (x,y,z),self.worldToPixel(x,y,self.map_msg.info.origin.position.x,self.map_msg.info.origin.position.y,self.map_msg.info.resolution,self.scale)
-  
-  '''
-  def publishGoal(self,robot):
-
-    if robot["goal"] is not None:
-      if robot["type"] == "ugv":
-        topic = f'/{robot["name"]}{UGV_GOAL_TOPIC}'
-      if robot["type"] == "uav":
-        topic = f'/{robot["name"]}{UAV_GOAL_TOPIC}'
-      pub = rospy.Publisher(topic, PoseStamped, queue_size=10)
-      pub.publish(self.createGoal(*robot["goal"]))  
-  '''
-  def publishGoal(self,robot):
-    if robot["goal"] is not None:
-      rospy.ServiceProxy(f"{robot['name']}/roschain/submit_message",SubmitTransaction)(SubmitTransactionRequest(
-        'targets',
-        json.dumps(
-        {
-          "node_id":robot["name"],
-          "timecreated":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-          "pos_x":robot["goal"][0],
-          "pos_y":robot["goal"][1],
-          "needed_uav":NEEDED_UAVS,
-          "needed_ugv":NEEDED_UGVS
-          
-        })
+    resp_coordinates = self.model_coordinates.call(ServiceRequest({"model_name":robot["model_name"],"relative_entity_name": "world"}))
+    (roll, pitch, yaw) =euler_from_quaternion(
+      resp_coordinates["pose"]["orientation"]["x"],
+      resp_coordinates["pose"]["orientation"]["y"],
+      resp_coordinates["pose"]["orientation"]["z"],
+      resp_coordinates["pose"]["orientation"]["w"]
       )
-    )
+    x=resp_coordinates["pose"]["position"]["x"]
+    y=resp_coordinates["pose"]["position"]["y"]
+    z=resp_coordinates["pose"]["position"]["z"]
+    return (x,y,z),self.worldToPixel(x,y,self.map_msg["info"]["origin"]["position"]["x"],self.map_msg["info"]["origin"]["position"]["y"],self.map_msg["info"]["resolution"],self.scale)
+  
+  def publishGoal(self,robot):
+    if robot["goal"] is not None:
+      Topic(self.node, f'{robot["name"]}/goal_found', 'std_msgs/String').publish(Message({"data":f'{robot["goal"][0]},{robot["goal"][1]},{self.needed_uav},{self.needed_ugv}'}))
+      
 
   def watchForGoal(self,robot):
     if robot["goal"] is not None and self.inTolerance(*robot["loc"],*robot["goal"],TOLERANCE):
-      rospy.loginfo(f"PyMonitor: Robot {robot['name']} reached goal")
+      print(f"PyMonitor: Robot {robot['name']} reached goal")
       return None
     return robot["goal"]
 
   def displayPath(self,surface):
     if surface["path"] is not None and len(surface["path"])>0 and surface["goal"] is not None:
       for pose in surface["path"]:
-        x = pose.x
-        y = pose.y
+        x = pose["x"]
+        y = pose["y"]
         point = self.worldToPixel(x,y,self.map_msg.info.origin.position.x,self.map_msg.info.origin.position.y,self.map_msg.info.resolution,self.scale)
         pygame.draw.circle(self.screen, (0,255,0), point, 3)
 
   def rendreGoal(self,robot):
     if robot["goal"] is not None:
       goalLoc = robot['goal'][0],robot['goal'][1]
-      goal = self.worldToPixel(*goalLoc,self.map_msg.info.origin.position.x,self.map_msg.info.origin.position.y,self.map_msg.info.resolution,self.scale)
+      goal = self.worldToPixel(*goalLoc,self.map_msg["info"]["origin"]["position"]["x"],self.map_msg["info"]["origin"]["position"]["y"],self.map_msg["info"]["resolution"],self.scale)
       pygame.draw.circle(self.screen, (0,0,255), goal, 5)
 
   def rendreRobot(self,robot):
@@ -306,7 +296,14 @@ class PyMonitor:
       self.screen.blit(robot["surface"],(robot["pos"][0],robot["pos"][1]))
 
   def renderOrigin(self):
-    goal = self.worldToPixel(self.map_msg.info.origin.position.x,self.map_msg.info.origin.position.y,self.map_msg.info.origin.position.x,self.map_msg.info.origin.position.y,self.map_msg.info.resolution,self.scale)
+    goal = self.worldToPixel(
+      self.map_msg["info"]["origin"]["position"]["x"],
+      self.map_msg["info"]["origin"]["position"]["y"],
+      self.map_msg["info"]["origin"]["position"]["x"],
+      self.map_msg["info"]["origin"]["position"]["y"],
+      self.map_msg["info"]["resolution"],
+      self.scale
+      )
     pygame.draw.circle(self.screen, (0,255,255), goal, 5)
 
   def updateScreen(self):
@@ -314,21 +311,19 @@ class PyMonitor:
     self.renderOrigin()
     #update robots coordinates
     for t in self.surfaces:
-      try:
-        #update robot coordinates
-        t["loc"],t["pos"] = self.updateRobotCoordinates(t)
-        #prodcasting goal to robot is exist
-        #self.publishGoal(t)
-        #check goal status
-        t["goal"] = self.watchForGoal(t)  
-        #rendre goal
-        self.rendreGoal(t)
-        #rendre path
-        self.displayPath(t)
-        #rendre robot
-        self.rendreRobot(t)
-      except rospy.ServiceException as e:
-        rospy.loginfo("Get Model State service call failed:  {0}".format(e))
+      #update robot coordinates
+      t["loc"],t["pos"] = self.updateRobotCoordinates(t)
+      #prodcasting goal to robot is exist
+      #self.publishGoal(t)
+      #check goal status
+      t["goal"] = self.watchForGoal(t)  
+      #rendre goal
+      self.rendreGoal(t)
+      #rendre path
+      self.displayPath(t)
+      #rendre robot
+      self.rendreRobot(t)
+
 
   def highlightSelectedRobot(self):
     if self.activeIndex is not None:
@@ -343,7 +338,7 @@ class PyMonitor:
         if event.button == 1:
           if self.activeIndex is not None:
             #prodcast goal to /ugv1/move_base_simple/goal topic
-            pos = self.pixelToWorld(event.pos[0],event.pos[1],self.map_msg.info.origin.position.x,self.map_msg.info.origin.position.y,self.map_msg.info.resolution,self.scale)
+            pos = self.pixelToWorld(event.pos[0],event.pos[1],self.map_msg["info"]["origin"]["position"]["x"],self.map_msg["info"]["origin"]["position"]["y"],self.map_msg["info"]["resolution"],self.scale)
             pos = (pos[0],pos[1],0 if self.surfaces[self.activeIndex]["type"] == "ugv" else ELEVATION)
             self.surfaces[self.activeIndex]["goal"] = pos
             #prodcast goal
@@ -371,9 +366,13 @@ class PyMonitor:
     #sleep
     self.rate.sleep()
 
+def get_param(param_name, default_value=None):
+    if param_name in environ:
+        return environ[param_name]
+    else:
+        return default_value
 if __name__ == '__main__':
   monitor = PyMonitor()
-  while not rospy.is_shutdown():
+  while True:
     monitor.loop()
-  rospy.spin()
   

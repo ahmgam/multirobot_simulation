@@ -7,7 +7,7 @@ services:
     environment:
       - ROBOT_NAME=uav01
       - ROBOT_TYPE=uav
-      - MQTT_HOST=rosmaster
+      - MQTT_HOST=mosquittoo
       - MQTT_PORT=1883
       - SECRET=lkfpoewrvcmlsdjfjehf
       - UPDATE_INTERVAL=10
@@ -30,7 +30,7 @@ services:
     environment:
       - ROBOT_NAME=ugv01
       - ROBOT_TYPE=ugv
-      - MQTT_HOST=rosmaster
+      - MQTT_HOST=mosquittoo
       - MQTT_PORT=1883
       - SECRET=lkfpoewrvcmlsdjfjehf
       - UPDATE_INTERVAL=10
