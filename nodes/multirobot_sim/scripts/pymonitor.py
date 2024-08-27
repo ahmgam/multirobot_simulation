@@ -282,7 +282,7 @@ class PyMonitor:
       for pose in surface["path"]:
         x = pose["x"]
         y = pose["y"]
-        point = self.worldToPixel(x,y,self.map_msg.info.origin.position.x,self.map_msg.info.origin.position.y,self.map_msg.info.resolution,self.scale)
+        point = self.worldToPixel(x,y,self.map_msg["info"]["origin"]["position"]["x"],self.map_msg["info"]["origin"]["position"]["y"],self.map_msg["info"]["resolution"],self.scale)
         pygame.draw.circle(self.screen, (0,255,0), point, 3)
 
   def rendreGoal(self,robot):
