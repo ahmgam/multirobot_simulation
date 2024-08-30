@@ -1,0 +1,44 @@
+<launch>
+ <!-- include uav -->
+    <include file="$(find multirobot_sim)/launch/uav.launch">
+        <arg name="x" value="0"/>
+        <arg name="y" value="0"/>
+        <arg name="z" value="0"/>
+        <arg name="node_id" value="uav01"/>
+    </include>
+<!-- include ugv -->
+    <include file="$(find multirobot_sim)/launch/ugv.launch">
+        <arg name="x" value="1.0"/>
+        <arg name="y" value="0.0"/>
+        <arg name="z" value="0.0"/>
+        <arg name="node_id" value="ugv01"/>
+    </include>
+<!-- include ugv -->
+    <include file="$(find multirobot_sim)/launch/ugv.launch">
+        <arg name="x" value="2.0"/>
+        <arg name="y" value="0.0"/>
+        <arg name="z" value="0.0"/>
+        <arg name="node_id" value="ugv02"/>
+    </include>
+ <!-- include uav -->
+    <include file="$(find multirobot_sim)/launch/uav.launch">
+        <arg name="x" value="-1"/>
+        <arg name="y" value="0"/>
+        <arg name="z" value="0"/>
+        <arg name="node_id" value="uav02"/>
+    </include>
+<!-- include ugv -->
+    <include file="$(find multirobot_sim)/launch/ugv.launch">
+        <arg name="x" value="-2.0"/>
+        <arg name="y" value="0.0"/>
+        <arg name="z" value="0.0"/>
+        <arg name="node_id" value="ugv03"/>
+    </include>
+ <!-- include uav -->
+    <include file="$(find multirobot_sim)/launch/uav.launch">
+        <arg name="x" value="-1"/>
+        <arg name="y" value="1"/>
+        <arg name="z" value="0"/>
+        <arg name="node_id" value="uav03"/>
+    </include>
+</launch>
