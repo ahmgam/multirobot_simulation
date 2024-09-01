@@ -679,6 +679,7 @@ class TaskAllocationManager:
             #allocate robots to target
             
             #self.visualize_path(path)
+            self.log_publisher.publish(f"{self.node_id}:{mktime(datetime.now().timetuple())}:published,{self.node_id},started,{record['target_id']}")
             self.start_task(path)
             self.ongoing_task = record['target_id']
             return
