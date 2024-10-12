@@ -1,0 +1,74 @@
+version: '3'
+services:
+  robot01:
+    image: roschain:latest
+    networks:
+      - robot01
+    environment:
+      - ROBOT_NAME=uav01
+      - ROBOT_TYPE=uav
+      - MQTT_HOST=mosquittoo
+      - MQTT_PORT=1883
+      - SECRET=lkfpoewrvcmlsdjfjehf
+      - UPDATE_INTERVAL=10
+      - MIN_NODES_NUM=1
+      - ROS_MASTER_URI=http://rosmaster:11311
+      - GAZEBO_MASTER_URI=http://rosmaster:11345
+      - TIMEOUT_INTERVAL=60
+    depends_on:
+      - rosmaster
+  robot02:
+    image: roschain:latest
+    networks:
+      - robot02
+    environment:
+      - ROBOT_NAME=ugv01
+      - ROBOT_TYPE=ugv
+      - MQTT_HOST=mosquittoo
+      - MQTT_PORT=1883
+      - SECRET=lkfpoewrvcmlsdjfjehf
+      - UPDATE_INTERVAL=10
+      - MIN_NODES_NUM=1
+      - ROS_MASTER_URI=http://rosmaster:11311
+      - GAZEBO_MASTER_URI=http://rosmaster:11345
+      - TIMEOUT_INTERVAL=60
+    depends_on:
+      - rosmaster
+
+ 
+  mosquittoo:
+    image: eclipse-mosquitto
+    container_name: mosquittoo
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ~/mosquitto/data:/etc/mosquitto
+      - ~/mosquitto/config:/mosquitto/config
+    networks:
+      - robot01
+      - robot02
+
+
+  rosmaster:
+    container_name: rosmaster
+    image: simulation_setup:latest
+    networks:
+      - robot01
+      - robot02
+    environment:
+      - WORLD_FILE=/root/robot_ws/src/multirobot_sim/worlds/testworld.world
+      - MAP_FILE=/root/robot_ws/src/multirobot_sim/maps/map.yaml
+      - LAUNCH_FILE=2
+      - ROS_MASTER_URI=http://rosmaster:11311
+    restart: always
+    ports:
+      - "8080:8080"
+      - "11311:11311"
+      - "11345:11345"
+    depends_on:
+      - mosquittoo
+
+networks:
+  robot01:
+  robot02:
